@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--定义Mapper映射文件的约束和基本结构-->
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.dao.CustomerMapper">
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        insert into customer (username,password,remark,phone,email,address,created_time,updated_time,level,gender,image)
+        values (#{username},#{password},#{remark},#{phone},#{email},#{address},#{createdTime},#{updatedTime},#{level},#{gender},#{image})
+    </insert>
+
+    <update id="update">
+        update customer
+        <set>
+            <if test="username != null and username != ''">username = #{username},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="remark!= null and remark!= ''">remark = #{remark},</if>
+            <if test="phone!= null and phone!= ''">phone = #{phone},</if>
+            <if test="email!= null and email!= ''">email = #{email},</if>
+            <if test="address!= null and address!= ''">address = #{address},</if>
+            <if test="updatedTime!= null">updated_time = #{updatedTime},</if>
+            <if test="level!= null">level = #{level},</if>
+            <if test="gender!= null">gender = #{gender},</if>
+            <if test="image!= null and image!= ''">image = #{image},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="delete">
+        delete from customer where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="list" resultType="org.example.bean.Customer">
+        select c.* from customer c
+        <where>
+            <if test="username != null and username != ''">
+                c.username like concat('%',#{username},'%')
+            </if>
+            <if test="gender != null">
+                and c.gender = #{gender}
+            </if>
+        </where>
+    </select>
+
+    <select id="getInfo" resultType="org.example.bean.Customer">
+        select * from customer where id = #{id}
+    </select>
+
+    <select id="getCustomerGenderData" resultType="java.util.Map">
+        select
+            if(gender = 1, '男', '女') as gender,
+            count(*) as value
+        from customer group by gender ;
+    </select>
+
+    <select id="getCustomerLevelData" resultType="java.util.Map">
+        select
+            (case when level=1 then '普通客户'
+                  when level=2 then 'VIP客户'
+                  when level=3 then 'SVIP客户'
+                  else '其他' end)  pos,
+            count(*) num
+        from customer group by level
+        order by num
+    </select>
+
+</mapper>
