@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+  
+  <!-- Tailwind配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            success: '#00B42A',
+            warning: '#FF7D00',
+            danger: '#F53F3F',
+            info: '#86909C',
+            light: '#F2F3F5',
+            dark: '#1D2129',
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-shadow {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      .btn-hover {
+        @apply transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5;
+      }
+      .fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      .slide-up {
+        animation: slideUp 0.3s ease-out;
+      }
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-inter text-dark">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+      <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-shopping-bag text-primary text-2xl"></i>
+          <h1 class="text-xl font-bold text-primary">电商管理系统</h1>
+        </div>
+        
+        <div class="flex items-center space-x-6">
+          <nav class="hidden md:flex space-x-6">
+            <a href="#" class="text-gray-600 hover:text-primary transition-colors">客户管理</a>
+            <a href="#" class="text-primary font-medium">商品管理</a>
+            <a href="#" class="text-gray-600 hover:text-primary transition-colors">订单管理</a>
+            <a href="#" class="text-gray-600 hover:text-primary transition-colors">配送管理</a>
+          </nav>
+          
+          <div class="flex items-center space-x-4">
+            <div class="relative">
+              <i class="fa-solid fa-bell text-gray-500 hover:text-primary transition-colors cursor-pointer"></i>
+              <span class="absolute -top-1 -right-1 bg-danger text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+            </div>
+            
+            <div class="flex items-center space-x-2 cursor-pointer group">
+              <img src="https://picsum.photos/id/1005/200/200" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-colors">
+              <span class="hidden md:inline text-sm font-medium">管理员</span>
+              <i class="fa-solid fa-angle-down text-xs text-gray-500"></i>
+            </div>
+            
+            <button class="md:hidden text-gray-500">
+              <i class="fa-solid fa-bars"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+    
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-6">
+      <div class="flex flex-col md:flex-row gap-6">
+        <!-- 左侧统计面板 -->
+        <div class="w-full md:w-64 space-y-4">
+          <div class="bg-white rounded-xl p-4 card-shadow slide-up" style="animation-delay: 0.1s">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-gray-700">商品总数</h3>
+              <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <i class="fa-solid fa-boxes text-primary"></i>
+              </div>
+            </div>
+            <p class="text-3xl font-bold text-dark" id="totalProducts">{{ totalProducts }}</p>
+            <p class="text-xs text-gray-500 flex items-center">
+              <span class="flex items-center text-success mr-2">
+                <i class="fa-solid fa-arrow-up text-xs mr-1"></i>8.2%
+              </span>较上月
+            </p>
+          </div>
+          
+          <div class="bg-white rounded-xl p-4 card-shadow slide-up" style="animation-delay: 0.2s">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-gray-700">库存总量</h3>
+              <div class="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+                <i class="fa-solid fa-warehouse text-success"></i>
+              </div>
+            </div>
+            <p class="text-3xl font-bold text-dark">{{ totalStock }}</p>
+            <p class="text-xs text-gray-500 flex items-center">
+              <span class="flex items-center text-danger mr-2">
+                <i class="fa-solid fa-arrow-down text-xs mr-1"></i>3.5%
+              </span>较上周
+            </p>
+          </div>
+          
+          <div class="bg-white rounded-xl p-4 card-shadow slide-up" style="animation-delay: 0.3s">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-medium text-gray-700">缺货商品</h3>
+              <div class="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center">
+                <i class="fa-solid fa-exclamation-triangle text-warning"></i>
+              </div>
+            </div>
+            <p class="text-3xl font-bold text-dark">{{ outOfStockProducts }}</p>
+            <p class="text-xs text-gray-500 flex items-center">
+              <span class="flex items-center text-success mr-2">
+                <i class="fa-solid fa-arrow-down text-xs mr-1"></i>12.8%
+              </span>较上月
+            </p>
+          </div>
+          
+          <div class="bg-white rounded-xl p-4 card-shadow slide-up" style="animation-delay: 0.4s">
+            <h3 class="font-medium text-gray-700 mb-3">商品分类</h3>
+            <canvas id="productChart" width="400" height="250"></canvas>
+          </div>
+        </div>
+        
+        <!-- 右侧商品管理 -->
+        <div class="flex-grow">
+          <div class="bg-white rounded-xl p-4 card-shadow mb-6 slide-up" style="animation-delay: 0.2s">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+              <h2 class="text-lg font-bold mb-2 md:mb-0">商品列表</h2>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative">
+                  <input type="text" v-model="searchQuery" placeholder="搜索商品..." class="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                  <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <button @click="openAddModal" class="btn-hover bg-primary text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                  <i class="fa-solid fa-plus mr-2"></i>新增商品
+                </button>
+              </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+              <table class="min-w-full">
+                <thead>
+                  <tr class="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th class="px-4 py-3 rounded-tl-lg">ID</th>
+                    <th class="px-4 py-3">商品信息</th>
+                    <th class="px-4 py-3">分类</th>
+                    <th class="px-4 py-3">价格</th>
+                    <th class="px-4 py-3">库存</th>
+                    <th class="px-4 py-3">状态</th>
+                    <th class="px-4 py-3 rounded-tr-lg">操作</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr v-for="(product, index) in filteredProducts" :key="product.id" class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">#{{ product.id }}</td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <img class="h-12 w-12 rounded-lg object-cover" :src="product.image" alt="">
+                        <div class="ml-4">
+                          <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
+                          <div class="text-xs text-gray-500">SKU: {{ product.sku }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {{ product.category }}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      ¥{{ product.price.toFixed(2) }}
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                      <span v-if="product.stock > 50" class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                        充足 ({{ product.stock }})
+                      </span>
+                      <span v-if="product.stock <= 50 && product.stock > 0" class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                        不足 ({{ product.stock }})
+                      </span>
+                      <span v-if="product.stock === 0" class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                        缺货
+                      </span>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap">
+                      <span v-if="product.status === 'active'" class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                        上架
+                      </span>
+                      <span v-if="product.status === 'inactive'" class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                        下架
+                      </span>
+                    </td>
+                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                      <div class="flex space-x-2">
+                        <button @click="openEditModal(index)" class="text-primary hover:text-primary/80 transition-colors">
+                          <i class="fa-solid fa-pencil"></i>
+                        </button>
+                        <button @click="deleteProduct(index)" class="text-danger hover:text-danger/80 transition-colors">
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                        <button class="text-info hover:text-info/80 transition-colors">
+                          <i class="fa-solid fa-ellipsis-v"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="flex items-center justify-between px-4 py-3 sm:px-6 mt-4">
+              <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p class="text-sm text-gray-700">
+                    显示 <span class="font-medium">{{ pagination.start }}</span> 到 <span class="font-medium">{{ pagination.end }}</span> 条，共 <span class="font-medium">{{ totalProducts }}</span> 条记录
+                  </p>
+                </div>
+                <div>
+                  <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <a href="#" @click.prevent="prevPage" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                      <span class="sr-only">上一页</span>
+                      <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </a>
+                    
+                    <a href="#" @click.prevent="goToPage(page)" v-for="page in pages" :key="page" :class="{'bg-primary text-white': currentPage === page, 'bg-white text-gray-700 hover:bg-gray-50': currentPage !== page}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium">
+                      {{ page }}
+                    </a>
+                    
+                    <a href="#" @click.prevent="nextPage" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                      <span class="sr-only">下一页</span>
+                      <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </a>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+          <div class="mb-4 md:mb-0">
+            <p class="text-sm text-gray-500">© 2025 电商商品管理系统. 保留所有权利.</p>
+          </div>
+          <div class="flex space-x-6">
+            <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+              <i class="fa-brands fa-github"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+              <i class="fa-brands fa-twitter"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+              <i class="fa-brands fa-linkedin"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+    <!-- 添加/编辑商品模态框 -->
+    <div v-if="modalVisible" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- 背景遮罩 -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
+        
+        <!-- 居中内容 -->
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <!-- 模态框 -->
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full slide-up">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                  {{ isEditing ? '编辑商品' : '新增商品' }}
+                </h3>
+                
+                <div class="mt-2 space-y-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label for="name" class="block text-sm font-medium text-gray-700 mb-1">商品名称</label>
+                      <input type="text" id="name" v-model="formData.name" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    
+                    <div>
+                      <label for="sku" class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                      <input type="text" id="sku" v-model="formData.sku" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    
+                    <div>
+                      <label for="category" class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+                      <select id="category" v-model="formData.category" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        <option value="electronics">电子产品</option>
+                        <option value="clothing">服装服饰</option>
+                        <option value="home">家居用品</option>
+                        <option value="beauty">美妆个护</option>
+                        <option value="food">食品饮料</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label for="brand" class="block text-sm font-medium text-gray-700 mb-1">品牌</label>
+                      <input type="text" id="brand" v-model="formData.brand" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    
+                    <div>
+                      <label for="price" class="block text-sm font-medium text-gray-700 mb-1">价格</label>
+                      <input type="number" id="price" v-model.number="formData.price" min="0" step="0.01" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    
+                    <div>
+                      <label for="stock" class="block text-sm font-medium text-gray-700 mb-1">库存</label>
+                      <input type="number" id="stock" v-model.number="formData.stock" min="0" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                    
+                    <div>
+                      <label for="status" class="block text-sm font-medium text-gray-700 mb-1">状态</label>
+                      <select id="status" v-model="formData.status" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        <option value="active">上架</option>
+                        <option value="inactive">下架</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label for="image" class="block text-sm font-medium text-gray-700 mb-1">商品图片</label>
+                      <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                          <i class="fa-regular fa-image text-gray-400 text-3xl"></i>
+                          <div class="flex text-sm text-gray-600">
+                            <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none">
+                              <span>上传图片</span>
+                              <input id="file-upload" name="file-upload" type="file" class="sr-only">
+                            </label>
+                            <p class="pl-1">或拖拽图片到此处</p>
+                          </div>
+                          <p class="text-xs text-gray-500">
+                            PNG, JPG, GIF 不超过 10MB
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="sm:col-span-2">
+                      <label for="description" class="block text-sm font-medium text-gray-700 mb-1">商品描述</label>
+                      <textarea id="description" v-model="formData.description" rows="3" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button type="button" @click="saveProduct" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm btn-hover">
+              保存
+            </button>
+            <button type="button" @click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm btn-hover">
+              取消
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 删除确认模态框 -->
+    <div v-if="deleteModalVisible" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="delete-modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full slide-up">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                <i class="fa-solid fa-trash text-danger text-xl"></i>
+              </div>
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2" id="delete-modal-title">
+                  删除商品
+                </h3>
+                <div class="mt-2">
+                  <p class="text-sm text-gray-500">
+                    确定要删除 "{{ currentDeleteProduct.name }}" 吗？此操作不可撤销。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button type="button" @click="confirmDelete" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-danger text-base font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-danger sm:ml-3 sm:w-auto sm:text-sm btn-hover">
+              删除
+            </button>
+            <button type="button" @click="cancelDelete" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm btn-hover">
+              取消
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 通知提示 -->
+    <div v-if="notificationVisible" class="fixed top-4 right-4 z-50 fade-in">
+      <div class="bg-white rounded-lg shadow-lg p-4 flex items-center max-w-sm w-full">
+        <div class="flex-shrink-0">
+          <i :class="notificationType === 'success' ? 'fa-solid fa-check-circle text-success' : 'fa-solid fa-exclamation-circle text-danger'"></i>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm font-medium text-gray-900">{{ notificationMessage }}</p>
+        </div>
+        <div class="ml-auto pl-3">
+          <div class="h-5 w-5 flex items-center justify-center">
+            <button @click="hideNotification" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+              <i class="fa-solid fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 初始化Vue应用
+    new Vue({
+      el: '#app',
+      data: {
+        // 商品数据
+        products: [
+          { id: 1, name: '智能手机', sku: 'PH-2025-001', category: 'electronics', brand: 'Apple', price: 5999.00, stock: 120, status: 'active', image: 'https://picsum.photos/id/160/200/200', description: '最新款智能手机，配备高性能处理器和高清显示屏。' },
+          { id: 2, name: '笔记本电脑', sku: 'LT-2025-002', category: 'electronics', brand: 'Dell', price: 7999.00, stock: 85, status: 'active', image: 'https://picsum.photos/id/48/200/200', description: '轻薄便携笔记本，长续航，适合办公和娱乐。' },
+          { id: 3, name: '休闲T恤', sku: 'CL-2025-003', category: 'clothing', brand: 'Nike', price: 299.00, stock: 200, status: 'active', image: 'https://picsum.photos/id/1005/200/200', description: '纯棉T恤，舒适透气，多种颜色可选。' },
+          { id: 4, name: '无线耳机', sku: 'AC-2025-004', category: 'electronics', brand: 'Sony', price: 1299.00, stock: 50, status: 'active', image: 'https://picsum.photos/id/96/200/200', description: '主动降噪无线耳机，高品质音效。' },
+          { id: 5, name: '智能手表', sku: 'WE-2025-005', category: 'electronics', brand: 'Samsung', price: 1899.00, stock: 30, status: 'active', image: 'https://picsum.photos/id/177/200/200', description: '多功能智能手表，支持心率监测和运动追踪。' },
+          { id: 6, name: '厨房料理机', sku: 'HO-2025-006', category: 'home', brand: 'Philips', price: 1599.00, stock: 45, status: 'active', image: 'https://picsum.photos/id/139/200/200', description: '多功能料理机，轻松制作各种美食。' },
+          { id: 7, name: '女士连衣裙', sku: 'CL-2025-007', category: 'clothing', brand: 'ZARA', price: 499.00, stock: 120, status: 'active', image: 'https://picsum.photos/id/64/200/200', description: '夏季新款连衣裙，时尚百搭。' },
+          { id: 8, name: '保湿面霜', sku: 'BE-2025-008', category: 'beauty', brand: 'Lancôme', price: 520.00, stock: 75, status: 'active', image: 'https://picsum.photos/id/21/200/200', description: '高效保湿面霜，适合各种肤质。' },
+          { id: 9, name: '机械键盘', sku: 'AC-2025-009', category: 'electronics', brand: 'Logitech', price: 799.00, stock: 25, status: 'active', image: 'https://picsum.photos/id/180/200/200', description: '全尺寸机械键盘，RGB背光，手感舒适。' },
+          { id: 10, name: '咖啡机', sku: 'HO-2025-010', category: 'home', brand: 'DeLonghi', price: 2999.00, stock: 18, status: 'active', image: 'https://picsum.photos/id/142/200/200', description: '全自动咖啡机，一键制作香浓咖啡。' },
+          { id: 11, name: '男士牛仔裤', sku: 'CL-2025-011', category: 'clothing', brand: 'Levi\'s', price: 599.00, stock: 90, status: 'active', image: 'https://picsum.photos/id/1006/200/200', description: '经典直筒牛仔裤，耐磨舒适。' },
+          { id: 12, name: '洗发水', sku: 'BE-2025-012', category: 'beauty', brand: 'Pantene', price: 89.00, stock: 150, status: 'active', image: 'https://picsum.photos/id/26/200/200', description: '滋养修护洗发水，改善干枯发质。' },
+          { id: 13, name: '智能门锁', sku: 'HO-2025-013', category: 'home', brand: 'Xiaomi', price: 1299.00, stock: 40, status: 'active', image: 'https://picsum.photos/id/119/200/200', description: '指纹识别智能门锁，多种开锁方式。' },
+          { id: 14, name: '蓝牙耳机', sku: 'AC-2025-014', category: 'electronics', brand: 'Bose', price: 1799.00, stock: 0, status: 'inactive', image: 'https://picsum.photos/id/97/200/200', description: '高品质蓝牙耳机，长时间续航。' },
+          { id: 15, name: '运动鞋', sku: 'CL-2025-015', category: 'clothing', brand: 'Adidas', price: 799.00, stock: 65, status: 'active', image: 'https://picsum.photos/id/103/200/200', description: '专业运动鞋，提供良好支撑和缓冲。' }
+        ],
+        
+        // 搜索查询
+        searchQuery: '',
+        
+        // 分页信息
+        currentPage: 1,
+        itemsPerPage: 5,
+        
+        // 模态框状态
+        modalVisible: false,
+        isEditing: false,
+        currentEditIndex: -1,
+        
+        // 删除确认模态框
+        deleteModalVisible: false,
+        currentDeleteProduct: null,
+        
+        // 表单数据
+        formData: {
+          id: null,
+          name: '',
+          sku: '',
+          category: 'electronics',
+          brand: '',
+          price: 0,
+          stock: 0,
+          status: 'active',
+          image: 'https://picsum.photos/id/160/200/200',
+          description: ''
+        },
+        
+        // 通知
+        notificationVisible: false,
+        notificationMessage: '',
+        notificationType: 'success',
+        
+        // 统计数据
+        totalProducts: 0,
+        totalStock: 0,
+        outOfStockProducts: 0
+      },
+      
+      computed: {
+        // 过滤后的商品列表
+        filteredProducts() {
+          const searchTerm = this.searchQuery.toLowerCase();
+          return this.products
+            .filter(product => 
+              product.name.toLowerCase().includes(searchTerm) || 
+              product.sku.toLowerCase().includes(searchTerm) || 
+              product.category.toLowerCase().includes(searchTerm) ||
+              product.brand.toLowerCase().includes(searchTerm)
+            )
+            .slice((this.currentPage - 1) * this.itemsPerPage, this.currentPage * this.itemsPerPage);
+        },
+        
+        // 总页数
+        totalPages() {
+          return Math.ceil(this.products.length / this.itemsPerPage);
+        },
+        
+        // 分页页码
+        pages() {
+          const pages = [];
+          const maxPages = 5;
+          let startPage = Math.max(1, this.currentPage - Math.floor(maxPages / 2));
+          let endPage = startPage + maxPages - 1;
+          
+          if (endPage > this.totalPages) {
+            endPage = this.totalPages;
+            startPage = Math.max(1, endPage - maxPages + 1);
+          }
+          
+          for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+          }
+          
+          return pages;
+        },
+        
+        // 分页显示信息
+        pagination() {
+          const start = (this.currentPage - 1) * this.itemsPerPage + 1;
+          const end = Math.min(this.currentPage * this.itemsPerPage, this.products.length);
+          return { start, end };
+        }
+      },
+      
+      mounted() {
+        // 初始化统计数据
+        this.updateStatistics();
+        
+        // 初始化图表
+        this.initChart();
+      },
+      
+      methods: {
+        // 打开添加商品模态框
+        openAddModal() {
+          this.isEditing = false;
+          this.currentEditIndex = -1;
+          this.formData = {
+            id: null,
+            name: '',
+            sku: '',
+            category: 'electronics',
+            brand: '',
+            price: 0,
+            stock: 0,
+            status: 'active',
+            image: 'https://picsum.photos/id/160/200/200',
+            description: ''
+          };
+          this.modalVisible = true;
+        },
+        
+        // 打开编辑商品模态框
+        openEditModal(index) {
+          this.isEditing = true;
+          this.currentEditIndex = index;
+          const product = this.filteredProducts[index];
+          this.formData = { ...product };
+          this.modalVisible = true;
+        },
+        
+        // 关闭模态框
+        closeModal() {
+          this.modalVisible = false;
+        },
+        
+        // 保存商品信息
+        saveProduct() {
+          // 表单验证
+          if (!this.formData.name || !this.formData.sku || this.formData.price <= 0) {
+            this.showNotification('请填写必填字段且价格必须大于0', 'error');
+            return;
+          }
+          
+          if (this.isEditing) {
+            // 更新现有商品
+            const originalIndex = this.products.findIndex(p => p.id === this.formData.id);
+            if (originalIndex !== -1) {
+              this.products.splice(originalIndex, 1, this.formData);
+              this.showNotification('商品信息更新成功', 'success');
+            }
+          } else {
+            // 添加新商品
+            const newId = Math.max(0, ...this.products.map(p => p.id)) + 1;
+            this.formData.id = newId;
+            this.products.unshift(this.formData);
+            this.showNotification('新商品添加成功', 'success');
+          }
+          
+          this.modalVisible = false;
+          this.updateStatistics();
+        },
+        
+        // 删除商品
+        deleteProduct(index) {
+          this.currentDeleteProduct = this.filteredProducts[index];
+          this.deleteModalVisible = true;
+        },
+        
+        // 确认删除
+        confirmDelete() {
+          if (this.currentDeleteProduct) {
+            const index = this.products.findIndex(p => p.id === this.currentDeleteProduct.id);
+            if (index !== -1) {
+              this.products.splice(index, 1);
+              this.showNotification('商品已成功删除', 'success');
+            }
+          }
+          this.deleteModalVisible = false;
+          this.updateStatistics();
+        },
+        
+        // 取消删除
+        cancelDelete() {
+          this.deleteModalVisible = false;
+        },
+        
+        // 显示通知
+        showNotification(message, type = 'success') {
+          this.notificationMessage = message;
+          this.notificationType = type;
+          this.notificationVisible = true;
+          
+          // 3秒后自动隐藏
+          setTimeout(() => {
+            this.hideNotification();
+          }, 3000);
+        },
+        
+        // 隐藏通知
+        hideNotification() {
+          this.notificationVisible = false;
+        },
+        
+        // 切换到上一页
+        prevPage() {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+          }
+        },
+        
+        // 切换到下一页
+        nextPage() {
+          if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+          }
+        },
+        
+        // 切换到指定页
+        goToPage(page) {
+          if (page >= 1 && page <= this.totalPages) {
+            this.currentPage = page;
+          }
+        },
+        
+        // 更新统计数据
+        updateStatistics() {
+          this.totalProducts = this.products.length;
+          this.totalStock = this.products.reduce((sum, product) => sum + product.stock, 0);
+          this.outOfStockProducts = this.products.filter(product => product.stock === 0).length;
+          
+          // 更新图表
+          this.initChart();
+        },
+        
+        // 初始化图表
+        initChart() {
+          // 计算商品分类分布
+          const categoryCounts = {
+            electronics: 0,
+            clothing: 0,
+            home: 0,
+            beauty: 0,
+            food: 0
+          };
+          
+          this.products.forEach(product => {
+            if (categoryCounts.hasOwnProperty(product.category)) {
+              categoryCounts[product.category]++;
+            }
+          });
+          
+          // 创建图表
+          const ctx = document.getElementById('productChart').getContext('2d');
+          
+          // 销毁旧图表（如果存在）
+          if (window.productChartInstance) {
+            window.productChartInstance.destroy();
+          }
+          
+          window.productChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: ['电子产品', '服装服饰', '家居用品', '美妆个护', '食品饮料'],
+              datasets: [{
+                label: '商品数量',
+                data: [
+                  categoryCounts.electronics,
+                  categoryCounts.clothing,
+                  categoryCounts.home,
+                  categoryCounts.beauty,
+                  categoryCounts.food
+                ],
+                backgroundColor: [
+                  '#165DFF',
+                  '#00B42A',
+                  '#FF7D00',
+                  '#F53F3F',
+                  '#86909C'
+                ],
+                borderWidth: 0,
+                borderRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.dataset.label || '';
+                      const value = context.raw || 0;
+                      return `${label}: ${value}`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: {
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.05)'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+    

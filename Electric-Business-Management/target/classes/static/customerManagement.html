@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客户管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        info: '#86909C',
+                        light: '#F2F3F5',
+                        dark: '#1D2129',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .btn-hover {
+                @apply transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5;
+            }
+            .fade-in {
+                animation: fadeIn 0.3s ease-in-out;
+            }
+            .slide-up {
+                animation: slideUp 0.3s ease-out;
+            }
+            .pulse {
+                animation: pulse 2s infinite;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter text-dark">
+<div id="app" class="min-h-screen flex flex-col">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shopping-bag text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">电商客户管理系统</h1>
+            </div>
+
+            <div class="flex items-center space-x-6">
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#" class="text-primary font-medium">客户管理</a>
+                    <a href="#" class="text-gray-600 hover:text-primary transition-colors">订单管理</a>
+                    <a href="#" class="text-gray-600 hover:text-primary transition-colors">商品管理</a>
+                    <a href="#" class="text-gray-600 hover:text-primary transition-colors">配送管理</a>
+                </nav>
+
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <i class="fa-solid fa-bell text-gray-500 hover:text-primary transition-colors cursor-pointer"></i>
+                        <span class="absolute -top-1 -right-1 bg-danger text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+                    </div>
+
+                    <div class="flex items-center space-x-2 cursor-pointer group">
+                        <img src="https://picsum.photos/id/1005/200/200" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-transparent group-hover:border-primary transition-colors">
+                        <span class="hidden md:inline text-sm font-medium">管理员</span>
+                        <i class="fa-solid fa-angle-down text-xs text-gray-500"></i>
+                    </div>
+
+                    <button class="md:hidden text-gray-500">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-6">
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- 左侧统计面板 -->
+            <div class="w-full md:w-64 space-y-4">
+                <div class="bg-white rounded-xl p-4 card-shadow slide-up" style="animation-delay: 0.1s">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-medium text-gray-700">客户统计</h3>
+                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <i class="fa-solid fa-users text-primary"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-dark" id="totalCustomers">{{ totalCustomers }}</p>
+                    <p class="text-xs text-gray-500 flex items-center">
+              <span class="flex items-center text-success mr-2">
+                <i class="fa-solid fa-arrow-up text-xs mr-1"></i>12.5%
+              </span>较上月
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 card-shadow slide-up" style="animation-delay: 0.2s">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-medium text-gray-700">新增客户</h3>
+                        <div class="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+                            <i class="fa-solid fa-user-plus text-success"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-dark">{{ newCustomers }}</p>
+                    <p class="text-xs text-gray-500 flex items-center">
+              <span class="flex items-center text-success mr-2">
+                <i class="fa-solid fa-arrow-up text-xs mr-1"></i>8.3%
+              </span>较上周
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 card-shadow slide-up" style="animation-delay: 0.3s">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-medium text-gray-700">活跃度</h3>
+                        <div class="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center">
+                            <i class="fa-solid fa-bolt text-warning"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-dark">{{ activityRate }}%</p>
+                    <p class="text-xs text-gray-500 flex items-center">
+              <span class="flex items-center text-danger mr-2">
+                <i class="fa-solid fa-arrow-down text-xs mr-1"></i>2.1%
+              </span>较上周
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 card-shadow slide-up" style="animation-delay: 0.4s">
+                    <h3 class="font-medium text-gray-700 mb-3">客户分布</h3>
+                    <canvas id="customerChart" width="400" height="250"></canvas>
+                </div>
+            </div>
+
+            <!-- 右侧客户管理 -->
+            <div class="flex-grow">
+                <div class="bg-white rounded-xl p-4 card-shadow mb-6 slide-up" style="animation-delay: 0.2s">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold mb-2 md:mb-0">客户列表</h2>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative">
+                                <input type="text" v-model="searchQuery" placeholder="搜索客户..." class="w-full sm:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            <button @click="openAddModal" class="btn-hover bg-primary text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-plus mr-2"></i>新增客户
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                            <tr class="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 rounded-tl-lg">ID</th>
+                                <th class="px-4 py-3">客户信息</th>
+                                <th class="px-4 py-3">注册时间</th>
+                                <th class="px-4 py-3">会员等级</th>
+                                <th class="px-4 py-3">消费金额</th>
+                                <th class="px-4 py-3">状态</th>
+                                <th class="px-4 py-3 rounded-tr-lg">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                            <tr v-for="(customer, index) in filteredCustomers" :key="customer.id" class="hover:bg-gray-50 transition-colors">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">#{{ customer.id }}</td>
+                                <td class="px-4 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <img class="h-10 w-10 rounded-full object-cover" :src="customer.avatar" alt="">
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ customer.name }}</div>
+                                            <div class="text-xs text-gray-500">{{ customer.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ formatDate(customer.registerDate) }}
+                                </td>
+                                <td class="px-4 py-4 whitespace-nowrap">
+                      <span v-if="customer.vipLevel === 'gold'" class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                        黄金会员
+                      </span>
+                                    <span v-if="customer.vipLevel === 'silver'" class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                        白银会员
+                      </span>
+                                    <span v-if="customer.vipLevel === 'bronze'" class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
+                        青铜会员
+                      </span>
+                                </td>
+                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ¥{{ customer.totalSpend.toLocaleString() }}
+                                </td>
+                                <td class="px-4 py-4 whitespace-nowrap">
+                      <span v-if="customer.status === 'active'" class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                        活跃
+                      </span>
+                                    <span v-if="customer.status === 'inactive'" class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                        不活跃
+                      </span>
+                                    <span v-if="customer.status === 'pending'" class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                        待审核
+                      </span>
+                                </td>
+                                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <button @click="openEditModal(index)" class="text-primary hover:text-primary/80 transition-colors">
+                                            <i class="fa-solid fa-pencil"></i>
+                                        </button>
+                                        <button @click="deleteCustomer(index)" class="text-danger hover:text-danger/80 transition-colors">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                        <button class="text-info hover:text-info/80 transition-colors">
+                                            <i class="fa-solid fa-ellipsis-v"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    <div class="flex items-center justify-between px-4 py-3 sm:px-6 mt-4">
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    显示 <span class="font-medium">{{ pagination.start }}</span> 到 <span class="font-medium">{{ pagination.end }}</span> 条，共 <span class="font-medium">{{ totalCustomers }}</span> 条记录
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    <a href="#" @click.prevent="prevPage" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                                    </a>
+
+                                    <a href="#" @click.prevent="goToPage(page)" v-for="page in pages" :key="page" :class="{'bg-primary text-white': currentPage === page, 'bg-white text-gray-700 hover:bg-gray-50': currentPage !== page}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium">
+                                        {{ page }}
+                                    </a>
+
+                                    <a href="#" @click.prevent="nextPage" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-sm text-gray-500">© 2025 电商客户管理系统. 保留所有权利.</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                        <i class="fa-brands fa-github"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                        <i class="fa-brands fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                        <i class="fa-brands fa-linkedin"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 添加/编辑客户模态框 -->
+    <div v-if="modalVisible" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- 背景遮罩 -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
+
+            <!-- 居中内容 -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- 模态框 -->
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full slide-up">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                                {{ isEditing ? '编辑客户' : '新增客户' }}
+                            </h3>
+
+                            <div class="mt-2 space-y-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                                        <input type="text" id="name" v-model="formData.name" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                                        <input type="email" id="email" v-model="formData.email" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+
+                                    <div>
+                                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">电话</label>
+                                        <input type="tel" id="phone" v-model="formData.phone" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+
+                                    <div>
+                                        <label for="vipLevel" class="block text-sm font-medium text-gray-700 mb-1">会员等级</label>
+                                        <select id="vipLevel" v-model="formData.vipLevel" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                            <option value="bronze">青铜会员</option>
+                                            <option value="silver">白银会员</option>
+                                            <option value="gold">黄金会员</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label for="address" class="block text-sm font-medium text-gray-700 mb-1">地址</label>
+                                        <input type="text" id="address" v-model="formData.address" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">状态</label>
+                                        <select id="status" v-model="formData.status" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                            <option value="active">活跃</option>
+                                            <option value="inactive">不活跃</option>
+                                            <option value="pending">待审核</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                                        <textarea id="notes" v-model="formData.notes" rows="3" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" @click="saveCustomer" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm btn-hover">
+                        保存
+                    </button>
+                    <button type="button" @click="closeModal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm btn-hover">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div v-if="deleteModalVisible" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="delete-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full slide-up">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fa-solid fa-trash text-danger text-xl"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2" id="delete-modal-title">
+                                删除客户
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">
+                                    确定要删除 "{{ currentDeleteCustomer.name }}" 吗？此操作不可撤销。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" @click="confirmDelete" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-danger text-base font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-danger sm:ml-3 sm:w-auto sm:text-sm btn-hover">
+                        删除
+                    </button>
+                    <button type="button" @click="cancelDelete" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm btn-hover">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知提示 -->
+    <div v-if="notificationVisible" class="fixed top-4 right-4 z-50 fade-in">
+        <div class="bg-white rounded-lg shadow-lg p-4 flex items-center max-w-sm w-full">
+            <div class="flex-shrink-0">
+                <i :class="notificationType === 'success' ? 'fa-solid fa-check-circle text-success' : 'fa-solid fa-exclamation-circle text-danger'"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-gray-900">{{ notificationMessage }}</p>
+            </div>
+            <div class="ml-auto pl-3">
+                <div class="h-5 w-5 flex items-center justify-center">
+                    <button @click="hideNotification" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 初始化Vue应用
+    new Vue({
+        el: '#app',
+        data: {
+            // 客户数据
+            customers: [
+                { id: 1, name: '张三', email: 'zhangsan@example.com', phone: '13800138000', avatar: 'https://picsum.photos/id/1005/200/200', vipLevel: 'gold', status: 'active', registerDate: '2025-01-15', totalSpend: 12500, address: '北京市朝阳区', notes: '忠实客户，经常购买高端商品' },
+                { id: 2, name: '李四', email: 'lisi@example.com', phone: '13900139000', avatar: 'https://picsum.photos/id/1012/200/200', vipLevel: 'silver', status: 'active', registerDate: '2025-02-20', totalSpend: 8300, address: '上海市浦东新区', notes: '新客户，潜力较大' },
+                { id: 3, name: '王五', email: 'wangwu@example.com', phone: '13700137000', avatar: 'https://picsum.photos/id/1027/200/200', vipLevel: 'bronze', status: 'inactive', registerDate: '2025-03-10', totalSpend: 3200, address: '广州市天河区', notes: '近期活跃度下降，需关注' },
+                { id: 4, name: '赵六', email: 'zhaoliu@example.com', phone: '13600136000', avatar: 'https://picsum.photos/id/1074/200/200', vipLevel: 'gold', status: 'active', registerDate: '2025-04-05', totalSpend: 15600, address: '深圳市南山区', notes: '企业客户，订单量大' },
+                { id: 5, name: '钱七', email: 'qianqi@example.com', phone: '13500135000', avatar: 'https://picsum.photos/id/1062/200/200', vipLevel: 'silver', status: 'pending', registerDate: '2025-05-01', totalSpend: 5700, address: '杭州市西湖区', notes: '申请升级会员，待审核' },
+                { id: 6, name: '孙八', email: 'sunba@example.com', phone: '13400134000', avatar: 'https://picsum.photos/id/1025/200/200', vipLevel: 'bronze', status: 'active', registerDate: '2025-05-10', totalSpend: 2100, address: '南京市鼓楼区', notes: '普通客户，偶尔购买' },
+                { id: 7, name: '周九', email: 'zhoujiu@example.com', phone: '13300133000', avatar: 'https://picsum.photos/id/1074/200/200', vipLevel: 'gold', status: 'active', registerDate: '2025-05-15', totalSpend: 18900, address: '成都市锦江区', notes: '高级会员，消费能力强' },
+                { id: 8, name: '吴十', email: 'wushi@example.com', phone: '13200132000', avatar: 'https://picsum.photos/id/1012/200/200', vipLevel: 'silver', status: 'inactive', registerDate: '2025-03-25', totalSpend: 6400, address: '武汉市武昌区', notes: '已流失客户，尝试挽回' },
+                { id: 9, name: '郑十一', email: 'zhengshiyi@example.com', phone: '13100131000', avatar: 'https://picsum.photos/id/1027/200/200', vipLevel: 'bronze', status: 'active', registerDate: '2025-04-18', totalSpend: 2900, address: '重庆市渝中区', notes: '新客户，有待培养' },
+                { id: 10, name: '王十二', email: 'wangshier@example.com', phone: '13000130000', avatar: 'https://picsum.photos/id/1005/200/200', vipLevel: 'gold', status: 'active', registerDate: '2025-02-08', totalSpend: 14200, address: '天津市和平区', notes: '重要客户，定期购买' }
+            ],
+
+            // 搜索查询
+            searchQuery: '',
+
+            // 分页信息
+            currentPage: 1,
+            itemsPerPage: 5,
+
+            // 模态框状态
+            modalVisible: false,
+            isEditing: false,
+            currentEditIndex: -1,
+
+            // 删除确认模态框
+            deleteModalVisible: false,
+            currentDeleteCustomer: null,
+
+            // 表单数据
+            formData: {
+                id: null,
+                name: '',
+                email: '',
+                phone: '',
+                avatar: 'https://picsum.photos/id/1005/200/200',
+                vipLevel: 'bronze',
+                status: 'active',
+                registerDate: '',
+                totalSpend: 0,
+                address: '',
+                notes: ''
+            },
+
+            // 通知
+            notificationVisible: false,
+            notificationMessage: '',
+            notificationType: 'success',
+
+            // 统计数据
+            totalCustomers: 0,
+            newCustomers: 0,
+            activityRate: 0
+        },
+
+        computed: {
+            // 过滤后的客户列表
+            filteredCustomers() {
+                const searchTerm = this.searchQuery.toLowerCase();
+                return this.customers
+                    .filter(customer =>
+                        customer.name.toLowerCase().includes(searchTerm) ||
+                        customer.email.toLowerCase().includes(searchTerm) ||
+                        customer.phone.includes(searchTerm)
+                    )
+                    .slice((this.currentPage - 1) * this.itemsPerPage, this.currentPage * this.itemsPerPage);
+            },
+
+            // 总页数
+            totalPages() {
+                return Math.ceil(this.customers.length / this.itemsPerPage);
+            },
+
+            // 分页页码
+            pages() {
+                const pages = [];
+                const maxPages = 5;
+                let startPage = Math.max(1, this.currentPage - Math.floor(maxPages / 2));
+                let endPage = startPage + maxPages - 1;
+
+                if (endPage > this.totalPages) {
+                    endPage = this.totalPages;
+                    startPage = Math.max(1, endPage - maxPages + 1);
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    pages.push(i);
+                }
+
+                return pages;
+            },
+
+            // 分页显示信息
+            pagination() {
+                const start = (this.currentPage - 1) * this.itemsPerPage + 1;
+                const end = Math.min(this.currentPage * this.itemsPerPage, this.customers.length);
+                return { start, end };
+            }
+        },
+
+        mounted() {
+            // 初始化统计数据
+            this.updateStatistics();
+
+            // 初始化图表
+            this.initChart();
+        },
+
+        methods: {
+            // 格式化日期
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('zh-CN');
+            },
+
+            // 打开添加客户模态框
+            openAddModal() {
+                this.isEditing = false;
+                this.currentEditIndex = -1;
+                this.formData = {
+                    id: null,
+                    name: '',
+                    email: '',
+                    phone: '',
+                    avatar: 'https://picsum.photos/id/1005/200/200',
+                    vipLevel: 'bronze',
+                    status: 'active',
+                    registerDate: new Date().toISOString().split('T')[0],
+                    totalSpend: 0,
+                    address: '',
+                    notes: ''
+                };
+                this.modalVisible = true;
+            },
+
+            // 打开编辑客户模态框
+            openEditModal(index) {
+                this.isEditing = true;
+                this.currentEditIndex = index;
+                const customer = this.filteredCustomers[index];
+                this.formData = { ...customer };
+                this.modalVisible = true;
+            },
+
+            // 关闭模态框
+            closeModal() {
+                this.modalVisible = false;
+            },
+
+            // 保存客户信息
+            saveCustomer() {
+                // 表单验证
+                if (!this.formData.name || !this.formData.email) {
+                    this.showNotification('请填写必填字段', 'error');
+                    return;
+                }
+
+                if (this.isEditing) {
+                    // 更新现有客户
+                    const originalIndex = this.customers.findIndex(c => c.id === this.formData.id);
+                    if (originalIndex !== -1) {
+                        this.customers.splice(originalIndex, 1, this.formData);
+                        this.showNotification('客户信息更新成功', 'success');
+                    }
+                } else {
+                    // 添加新客户
+                    const newId = Math.max(0, ...this.customers.map(c => c.id)) + 1;
+                    this.formData.id = newId;
+                    this.customers.unshift(this.formData);
+                    this.showNotification('新客户添加成功', 'success');
+                }
+
+                this.modalVisible = false;
+                this.updateStatistics();
+            },
+
+            // 删除客户
+            deleteCustomer(index) {
+                this.currentDeleteCustomer = this.filteredCustomers[index];
+                this.deleteModalVisible = true;
+            },
+
+            // 确认删除
+            confirmDelete() {
+                if (this.currentDeleteCustomer) {
+                    const index = this.customers.findIndex(c => c.id === this.currentDeleteCustomer.id);
+                    if (index !== -1) {
+                        this.customers.splice(index, 1);
+                        this.showNotification('客户已成功删除', 'success');
+                    }
+                }
+                this.deleteModalVisible = false;
+                this.updateStatistics();
+            },
+
+            // 取消删除
+            cancelDelete() {
+                this.deleteModalVisible = false;
+            },
+
+            // 显示通知
+            showNotification(message, type = 'success') {
+                this.notificationMessage = message;
+                this.notificationType = type;
+                this.notificationVisible = true;
+
+                // 3秒后自动隐藏
+                setTimeout(() => {
+                    this.hideNotification();
+                }, 3000);
+            },
+
+            // 隐藏通知
+            hideNotification() {
+                this.notificationVisible = false;
+            },
+
+            // 切换到上一页
+            prevPage() {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                }
+            },
+
+            // 切换到下一页
+            nextPage() {
+                if (this.currentPage < this.totalPages) {
+                    this.currentPage++;
+                }
+            },
+
+            // 切换到指定页
+            goToPage(page) {
+                if (page >= 1 && page <= this.totalPages) {
+                    this.currentPage = page;
+                }
+            },
+
+            // 更新统计数据
+            updateStatistics() {
+                this.totalCustomers = this.customers.length;
+
+                // 计算本月新增客户
+                const currentMonth = new Date().getMonth() + 1;
+                this.newCustomers = this.customers.filter(customer => {
+                    const customerMonth = new Date(customer.registerDate).getMonth() + 1;
+                    return customerMonth === currentMonth;
+                }).length;
+
+                // 计算活跃度（活跃客户比例）
+                const activeCustomers = this.customers.filter(customer => customer.status === 'active').length;
+                this.activityRate = Math.round((activeCustomers / this.totalCustomers) * 100);
+            },
+
+            // 初始化图表
+            initChart() {
+                // 计算客户等级分布
+                const goldCount = this.customers.filter(c => c.vipLevel === 'gold').length;
+                const silverCount = this.customers.filter(c => c.vipLevel === 'silver').length;
+                const bronzeCount = this.customers.filter(c => c.vipLevel === 'bronze').length;
+
+                // 创建图表
+                const ctx = document.getElementById('customerChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['黄金会员', '白银会员', '青铜会员'],
+                        datasets: [{
+                            data: [goldCount, silverCount, bronzeCount],
+                            backgroundColor: [
+                                '#FDB022',
+                                '#E5E7EB',
+                                '#F97316'
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>
