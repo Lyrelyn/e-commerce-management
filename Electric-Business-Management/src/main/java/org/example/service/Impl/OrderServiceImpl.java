@@ -7,6 +7,7 @@ import com.github.pagehelper.PageHelper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.bean.*;
+import org.example.dao.DeliveryMapper;
 import org.example.dao.OrderItemMapper;
 import org.example.dao.OrderMapper;
 import org.example.service.OrderService;
@@ -29,6 +30,8 @@ public class OrderServiceImpl implements OrderService {
     private OrderMapper orderMapper;
     @Autowired
     private OrderItemMapper orderItemMapper;
+    @Autowired
+    private DeliveryMapper deliveryMapper; // 注入 DeliveryMapper
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -45,6 +48,16 @@ public class OrderServiceImpl implements OrderService {
         if(!CollectionUtils.isEmpty(orderList)) {
             orderList.forEach(orderItem -> orderItem.setOrderId(order.getOrderId()));
             orderItemMapper.insertBatch(orderList);
+        }
+
+        // 检查订单状态是否变更为 "已支付"
+        if (order.getStatus() == 1) {
+            Delivery delivery = new Delivery();
+            delivery.setOrderId(order.getOrderId());
+            delivery.setStatus(0);
+            // 插入配送单信息
+            deliveryMapper.insert(delivery);
+            log.info("订单 {} 状态变更为已支付，已生成配送单", order.getOrderId());
         }
 
         String key = "cathe:order" + order.getId();
@@ -77,6 +90,16 @@ public class OrderServiceImpl implements OrderService {
         if(!CollectionUtils.isEmpty(orderList)) {
             orderList.forEach(orderItem -> orderItem.setOrderId(order.getOrderId()));
             orderItemMapper.insertBatch(orderList);
+        }
+
+        // 检查订单状态是否变更为 "已支付"
+        if (order.getStatus() == 1) {
+            Delivery delivery = new Delivery();
+            delivery.setOrderId(order.getOrderId());
+            delivery.setStatus(0);
+            // 插入配送单信息
+            deliveryMapper.insert(delivery);
+            log.info("订单 {} 状态变更为已支付，已生成配送单", order.getOrderId());
         }
     }
 

@@ -12,6 +12,7 @@ import org.example.bean.Customer;
 import org.example.bean.PageResult;
 import org.example.bean.Result;
 import org.example.dao.CustomerMapper;
+import org.example.dao.OrderMapper;
 import org.example.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -54,6 +55,7 @@ public class CustomerServiceImpl implements CustomerService {
         //删除缓存
         String key = "cathe:customer:" + customer.getId();
         stringRedisTemplate.delete(key);
+
         return Result.success();
     }
 
