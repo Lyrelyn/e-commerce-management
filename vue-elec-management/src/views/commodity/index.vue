@@ -371,7 +371,14 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="品牌">
-              <el-select v-model="commodity.brandId" placeholder="请选择品牌" style="width: 100%;">
+               <el-select
+                  v-model="commodity.brandId"
+                  placeholder="请选择品牌"
+                  style="width: 100%;"
+                  filterable
+                  allow-create
+                  default-first-option
+                >
                 <el-option 
                   v-for="brand in brandList" 
                   :key="brand.id" 
@@ -381,6 +388,7 @@
               </el-select>
             </el-form-item>
           </el-col>
+
           <el-col :span="12">
             <el-form-item label="销量">
               <el-input v-model="commodity.sales" placeholder="请输入销量"></el-input>

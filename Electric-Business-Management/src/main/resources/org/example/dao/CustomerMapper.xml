@@ -4,6 +4,7 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.example.dao.CustomerMapper">
+
     <insert id="save" useGeneratedKeys="true" keyProperty="id">
         insert into customer (username,password,remark,phone,email,address,created_time,updated_time,level,gender,image)
         values (#{username},#{password},#{remark},#{phone},#{email},#{address},#{createdTime},#{updatedTime},#{level},#{gender},#{image})

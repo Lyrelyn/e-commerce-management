@@ -15,16 +15,6 @@ public class UploadController {
 
     @PostMapping("/upload")
     public Result upload(MultipartFile file) throws Exception {
-        //log.info("接收参数：{}, {}, {}", name, age, file);
-
-//        String originalFilename = file.getOriginalFilename();
-//
-//        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-//        String newFileName = UUID.randomUUID().toString() + extension;
-//
-//        file.transferTo(new File("F:\\Learning\\JavaWeb\\NEUweb\\images" + newFileName));
-//        return Result.success();
-
         if (!file.isEmpty()) {
             // 生成唯一文件名
             String originalFilename = file.getOriginalFilename();

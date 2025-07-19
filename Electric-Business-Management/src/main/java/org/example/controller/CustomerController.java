@@ -28,14 +28,13 @@ public class CustomerController {
 
     @PostMapping
     public Result save(@RequestBody Customer customer){
-        //log.info("新增员工信息: {}", employee);
+
         customerService.save(customer);
         return Result.success();
     }
 
     @DeleteMapping
     public Result delete(@RequestParam List<Integer> ids){
-        //log.info("删除员工信息, id={}", id);
         customerService.delete(ids);
         return Result.success();
     }
@@ -48,10 +47,9 @@ public class CustomerController {
         return customerService.getInfo(id);
     }
 
-
     @PutMapping
     public Result update(@RequestBody Customer customer){
-        //log.info("更新员工信息: {}", employee);
+
         return customerService.update(customer);
         //return Result.success();
     }

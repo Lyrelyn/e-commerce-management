@@ -12,6 +12,7 @@ import org.example.bean.Result;
 import org.example.dao.DeliveryMapper;
 import org.example.service.DeliveryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +56,7 @@ public class DeliveryServiceImpl implements DeliveryService {
         deliveryMapper.delete(ids);
     }
 
+    @Cacheable(value = "deliveryCache", key = "#id")
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Result getInfo(Integer id) {
@@ -78,6 +80,7 @@ public class DeliveryServiceImpl implements DeliveryService {
         return Result.success(delivery);
     }
 
+    @Cacheable(value = "deliveryCache", key = "#delivery.id")
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void update(Delivery delivery) {

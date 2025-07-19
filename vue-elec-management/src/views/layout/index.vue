@@ -46,7 +46,7 @@
               <!-- 系统信息管理 -->
               <el-sub-menu index="/system">
                 <template #title>
-                  <el-icon><Tools /></el-icon>商品品牌管理
+                  <el-icon><Tools /></el-icon>商品管理
                 </template>
                 <el-menu-item index="/brand">
                   <el-icon><HelpFilled /></el-icon>品牌管理

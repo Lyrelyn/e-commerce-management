@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, onMounted } from 'vue'
+  import { ref, onMounted, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { queryPageApi, addApi, queryInfoApi, deleteApi, updateApi } from '@/api/order'
 
@@ -79,9 +79,6 @@
       { required: true, message: '请输入手机号', trigger: 'blur' },
       { pattern: /^1\d{10}$/g, message: '请输入有效的手机号', trigger: 'blur' }
     ],
-    totalPrice: [
-      { required: true, message: '请输入总价', trigger: 'blur' },
-    ],
     orderItemList: [
       { validator: validateOrderItemList, trigger:  ['change', 'submit'] }
     ]
@@ -93,10 +90,37 @@
     orderId: '',
     customerName: '',
     customerPhone: '',
-    totalPrice: '',
+    totalPrice: 0, // 初始化为 0
     status: '',
     orderItemList: []
   })
+
+  // 计算总金额的函数
+  const calculateTotalPrice = () => {
+    const total = order.value.orderItemList.reduce((sum, item) => {
+      const price = parseFloat(item.price) || 0
+      const number = parseInt(item.number) || 0
+      return sum + price * number
+    }, 0)
+    order.value.totalPrice = total
+  }
+
+  // 监听订单项目列表的变化，重新计算总金额
+  watch(() => order.value.orderItemList, () => {
+    calculateTotalPrice()
+  }, { deep: true })
+
+  // 订单项目
+  // 动态添加 .
+  const addOrderItem = () => {
+    order.value.orderItemList.push({commodityName: '', number: '', price: ''})
+  }
+
+  // 动态删除订单项目 .
+  const delOrderItem = (index) => {
+    order.value.orderItemList.splice(index, 1)
+    calculateTotalPrice() // 删除后重新计算总金额
+  }
 
   order.value = {
     orderId: '',
@@ -136,23 +160,13 @@
     })
   }
 
-  //订单项目
-  //动态添加 .
-  const addOrderItem = () => {
-    order.value.orderItemList.push({commodityName: '', number: '', price: ''})
-  }
-
-  //动态删除工作经历 .
-  const delOrderItem = (index) => {
-    order.value.orderItemList.splice(index, 1)
-  }
-
   const edit = async (id) => {
     const result = await queryInfoApi(id);
     if(result.code){
       dialogVisible.value = true;
       dialogTitle.value = '修改订单';
       order.value = result.data;
+      calculateTotalPrice() // 编辑时重新计算总金额
     }
   }
 
@@ -184,7 +198,7 @@
   //批量删除
   const deleteByIds = () => {
     //弹出确认框
-    ElMessageBox.confirm('您确认删除该客户吗?','提示',
+    ElMessageBox.confirm('您确认删除该订单吗?','提示',
       { confirmButtonText: '确认',cancelButtonText: '取消',type: 'warning'}
     ).then(async () => { //确认
       if(selectedIds.value && selectedIds.value.length > 0){
@@ -306,7 +320,8 @@
           <el-col :span="24">
             <el-col :span="12">
               <el-form-item label="总金额" prop="totalPrice">
-                <el-input v-model="order.totalPrice" placeholder="请输入总金额"></el-input>
+                <!-- 设置输入框为只读 -->
+                <el-input v-model="order.totalPrice" placeholder="请输入总金额" readonly></el-input>
               </el-form-item>
             </el-col>
             <el-form-item label="备注" prop="remark">

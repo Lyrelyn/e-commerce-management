@@ -7,6 +7,7 @@ import com.github.pagehelper.PageHelper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.bean.*;
+import org.example.dao.DeliveryMapper;
 import org.example.dao.OrderItemMapper;
 import org.example.dao.OrderMapper;
 import org.example.service.OrderService;
@@ -29,6 +30,8 @@ public class OrderServiceImpl implements OrderService {
     private OrderMapper orderMapper;
     @Autowired
     private OrderItemMapper orderItemMapper;
+    @Autowired
+    private DeliveryMapper deliveryMapper; // 注入 DeliveryMapper
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -46,9 +49,18 @@ public class OrderServiceImpl implements OrderService {
             orderList.forEach(orderItem -> orderItem.setOrderId(order.getOrderId()));
             orderItemMapper.insertBatch(orderList);
         }
+//        String key = "cathe:order" + order.getId();
+//        stringRedisTemplate.delete(key);
 
-        String key = "cathe:order" + order.getId();
-        stringRedisTemplate.delete(key);
+        // 检查订单状态是否变更为 "已支付"
+        if (order.getStatus() == 1) {
+            Delivery delivery = new Delivery();
+            delivery.setOrderId(order.getOrderId());
+            delivery.setStatus(0);
+            // 插入配送单信息
+            deliveryMapper.insert(delivery);
+            log.info("订单 {} 状态变更为已支付，已生成配送单", order.getOrderId());
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -78,6 +90,16 @@ public class OrderServiceImpl implements OrderService {
             orderList.forEach(orderItem -> orderItem.setOrderId(order.getOrderId()));
             orderItemMapper.insertBatch(orderList);
         }
+
+        // 检查订单状态是否变更为 "已支付"
+        if (order.getStatus() == 1) {
+            Delivery delivery = new Delivery();
+            delivery.setOrderId(order.getOrderId());
+            delivery.setStatus(0);
+            // 插入配送单信息
+            deliveryMapper.insert(delivery);
+            log.info("订单 {} 状态变更为已支付，已生成配送单", order.getOrderId());
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -92,21 +114,21 @@ public class OrderServiceImpl implements OrderService {
     public Result getInfo(Integer id) {
         String key = "cathe:order:" + id;
         //连接
-        String orderJson = stringRedisTemplate.opsForValue().get(key);
-        //判断是否命中
-        if(StrUtil.isNotBlank(orderJson)){
-            Order order = JSONUtil.toBean(orderJson,Order.class);
-            return Result.success(order);
-        }
-        //未命中，查询数据库
+//        String orderJson = stringRedisTemplate.opsForValue().get(key);
+//        //判断是否命中
+//        if(StrUtil.isNotBlank(orderJson)){
+//            Order order = JSONUtil.toBean(orderJson,Order.class);
+//            return Result.success(order);
+//        }
+//        //未命中，查询数据库
         Order order = orderMapper.getById(id);
 
-        // 生成一个 1 到 5 分钟的随机数
-        long randomMinutes = (long) (Math.random() * 5 + 1);
-        // 将基础时间和随机时间相加
-        long ttl = 15L + randomMinutes;
-        //将查询结果写入redis
-        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(order), ttl, TimeUnit.MINUTES);
+//        // 生成一个 1 到 5 分钟的随机数
+//        long randomMinutes = (long) (Math.random() * 5 + 1);
+//        // 将基础时间和随机时间相加
+//        long ttl = 15L + randomMinutes;
+//        //将查询结果写入redis
+//        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(order), ttl, TimeUnit.MINUTES);
         return Result.success(order);
     }
 }

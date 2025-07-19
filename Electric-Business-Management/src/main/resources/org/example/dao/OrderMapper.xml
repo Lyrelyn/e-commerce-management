@@ -16,7 +16,6 @@
         <result column="updated_time" property="updatedTime" />
         <result column="remark" property="remark" />
 
-        <!--封装exprList-->
         <collection property="orderItemList" ofType="org.example.bean.OrderItem">
             <id column="orderItemId" property="id" />
             <result column="orderId" property="orderId" />
